@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareBridge O2O 智慧中控系統 | CaaS + 養生莊園</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --cb-green: #00A693; /* 品牌色 Green */
+            --cb-blue: #0060A0;  /* 品牌色 Blue */
+            --cb-dark: #1a1a2e;
+            --cb-panel: #16213e;
+            --cb-light: #e0e0e0;
+            --cb-accent: #FF9F1C;
+            --alert-red: #DC3545;
+        }
+
+        body {
+            background-color: var(--cb-dark);
+            color: var(--cb-light);
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- 側邊欄 Sidebar --- */
+        .sidebar {
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--cb-blue) 0%, var(--cb-panel) 100%);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.4);
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .sidebar-brand {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 15px 20px;
+            border-left: 4px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background-color: rgba(255,255,255,0.1);
+            border-left-color: var(--cb-green);
+        }
+        
+        .nav-link i.fa-chevron-right {
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        /* --- 主內容區 --- */
+        .main-content {
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* --- 通用卡片樣式 --- */
+        .stat-card, .content-card {
+            background-color: var(--cb-panel);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--cb-green);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--cb-green);
+        }
+
+        /* --- 地圖區域 (Uber Style - Enhanced) --- */
+        .uber-map-container {
+            height: 600px;
+            background-color: #0f3460;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--cb-blue);
+        }
+
+        /* 模擬地圖網格背景 */
+        .map-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.5;
+        }
+        
+        /* 地圖控制層 (模擬 Uber 浮動面板) */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 20;
+            background: rgba(22, 33, 62, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            width: 280px;
+        }
+
+        /* 模擬地圖標記 */
+        .map-marker {
+            position: absolute;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* 彈性移動 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+        }
+        .map-marker:hover { transform: scale(1.2); z-index: 100; }
+        .map-marker .pin { font-size: 1.5rem; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        
+        /* 派單半徑雷達波 (Radar Scan) */
+        .radar-scan {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 1px solid rgba(0, 166, 147, 0.3);
+            background: rgba(0, 166, 147, 0.05);
+            z-index: 1;
+            pointer-events: none;
+            transition: all 0.5s;
+        }
+        .radar-scan::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px solid var(--cb-green);
+            opacity: 0;
+            animation: radar-ping 2s infinite;
+        }
+
+        @keyframes radar-ping {
+            0% { width: 0%; height: 0%; opacity: 0.8; }
+            100% { width: 100%; height: 100%; opacity: 0; }
+        }
+
+        /* --- 訂單列表 (Uber Style) --- */
+        .order-list-item {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+            transition: 0.2s;
+        }
+        .order-list-item:hover { background: rgba(255,255,255,0.1); }
+        .order-list-item.active { border-left-color: var(--cb-accent); background: rgba(255,255,255,0.15); }
+
+        /* --- 123 房控網格 --- */
+        .room-grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 8px;
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .room-cell {
+            aspect-ratio: 1;
+            background: #2a2a40;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            position: relative;
+        }
+        .room-cell:hover { border-color: #fff; }
+        .room-cell.occupied { background: #1b3a4b; color: var(--cb-green); border-bottom: 3px solid var(--cb-green); }
+        .room-cell.vacant { opacity: 0.4; }
+        .room-cell.emergency { background: var(--alert-red); color: white; animation: blink 1s infinite; }
+        
+        @keyframes blink { 50% { opacity: 0.5; } }
+
+        /* --- 影片容器 (優化版) --- */
+        .video-card {
+            background: var(--cb-panel);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: all 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--cb-green);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        /* 影片預覽圖模式 */
+        .video-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+        }
+        .video-placeholder:hover {
+            filter: brightness(1.1);
+        }
+        .video-placeholder::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.3); /* 稍微變暗以凸顯按鈕 */
+            transition: 0.3s;
+        }
+        .video-placeholder:hover::after {
+            background: rgba(0,0,0,0.1);
+        }
+        
+        .play-btn {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: 0.3s;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .play-btn::before {
+            content: '';
+            width: 0; 
+            height: 0; 
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-left: 18px solid #fff;
+            margin-left: 4px; /* Optical centering */
+        }
+        .video-placeholder:hover .play-btn {
+            background-color: var(--cb-green);
+            border-color: var(--cb-green);
+            transform: scale(1.1);
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .video-info {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-tags {
+            margin-bottom: 8px;
+        }
+        .video-tag {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 5px;
+            font-weight: 500;
+        }
+        .tag-demo { background: #dc3545; color: white; }
+        .tag-scenario { background: var(--cb-blue); color: white; }
+        .tag-concept { background: var(--cb-green); color: white; }
+        
+        .video-desc {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 8px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* --- 子畫面與模態框 --- */
+        .sub-view-panel {
+            display: none; /* JS 控制顯示 */
+            background: #232336;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid var(--cb-blue);
+        }
+
+        /* 徽章 Badge */
+        .badge-l1 { background-color: #6c757d; color: white; }
+        .badge-l2 { background-color: var(--cb-blue); color: white; }
+        .badge-l3 { background-color: #ffd700; color: #000; font-weight: bold; box-shadow: 0 0 5px #ffd700; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--cb-dark); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--cb-green); }
+
+        /* 手機版調整 */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -250px;
+                width: 250px;
+                height: 100%;
+                transition: 0.3s;
+            }
+            .sidebar.show { left: 0; }
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 999;
+            }
+            .mobile-overlay.show { display: block; }
+            .order-list-container { max-height: 300px; overflow-y: auto; margin-bottom: 20px; }
+            .map-controls { width: 220px; top: 10px; left: 10px; font-size: 0.9rem; }
+            .uber-map-container { height: 450px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 手機版 Header -->
+    <nav class="navbar navbar-dark bg-dark d-md-none p-3 border-bottom border-secondary sticky-top">
+        <button class="btn btn-outline-light" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <span class="navbar-brand mb-0 h1 text-center flex-grow-1">CareBridge OS</span>
+        <span class="badge bg-danger rounded-circle">1</span>
+    </nav>
+
+    <!-- 遮罩 (Mobile) -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="container-fluid">
+        <div class="row">
+            
+            <!-- 側邊欄 Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 sidebar d-flex flex-column p-0">
+                <div class="sidebar-brand">
+                    <i class="fas fa-heartbeat fa-3x" style="color: var(--cb-green);"></i>
+                    <h5 class="mt-3 fw-bold text-white">CareBridge <span style="color:var(--cb-green)">OS</span></h5>
+                    <small class="text-muted d-block">O2O 旗艦中控台</small>
+                </div>
+
+                <ul class="nav flex-column mt-3">
+                    <li class="nav-item">
+                        <a class="nav-link active" onclick="switchView('view-dashboard', this)">
+                            <span><i class="fas fa-tachometer-alt fa-fw me-2"></i> 總覽儀表板</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchView('view-dispatch', this)">
+                            <span><i class="fas fa-map-marked-alt fa-fw me-2"></i> CaaS 區域調度</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchView('view-village', this)">
+                            <span><i class="fas fa-hotel fa-fw me-2"></i> 養生村房控 (123房)</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchView('view-telemed', this)">
+                            <span><i class="fas fa-user-md fa-fw me-2"></i> 遠距醫療 Tier 1</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchView('view-robot', this)">
+                            <span><i class="fas fa-robot fa-fw me-2"></i> 人機協作監控</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <hr class="border-secondary mx-3">
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchView('view-videos', this)">
+                            <span class="text-warning"><i class="fab fa-youtube fa-fw me-2"></i> 影音展示專區</span>
+                            <i class="fas fa-play-circle"></i>
+                        </a>
+                    </li>
+                </ul>
+
+                <div class="mt-auto p-3 text-center border-top border-secondary">
+                    <small class="text-muted">系統版本 v2.5 (City Wide)</small><br>
+                    <small class="text-success"><i class="fas fa-circle fa-xs"></i> 連線穩定</small>
+                </div>
+            </nav>
+
+            <!-- 主要內容區 Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 main-content">
+                
+                <!-- 1. 總覽儀表板 View -->
+                <div id="view-dashboard" class="view-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2><i class="fas fa-tachometer-alt text-muted me-2"></i>今日營運總覽</h2>
+                        <button class="btn btn-outline-info btn-sm"><i class="fas fa-sync-alt"></i> 更新數據</button>
+                    </div>
+
+                    <!-- 頂部數據卡 -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="text-muted mb-1">CaaS 總交易額 (GMV)</div>
+                                <div class="stat-value">NT$ 186,400</div>
+                                <div class="text-success small"><i class="fas fa-arrow-up"></i> 15.2% 較昨日</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="text-muted mb-1">活躍照服員 (全區)</div>
+                                <div class="stat-value">142 <span class="fs-6 text-muted">/ 350</span></div>
+                                <div class="d-flex gap-1 mt-1">
+                                    <span class="badge badge-l1">L1:80</span>
+                                    <span class="badge badge-l2">L2:42</span>
+                                    <span class="badge badge-l3">L3:20</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card">
+                                <div class="text-muted mb-1">養生村入住率</div>
+                                <div class="stat-value">82%</div>
+                                <div class="text-info small">短期喘息入住: 15房</div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="stat-card" style="border-color: var(--alert-red);">
+                                <div class="text-danger mb-1 fw-bold"><i class="fas fa-bell"></i> 系統告警</div>
+                                <div class="stat-value text-danger">3</div>
+                                <div class="text-light small">1 跌倒, 2 呼叫超時</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快速入口與最近活動 -->
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <div class="content-card h-100">
+                                <h5><i class="fas fa-chart-line text-warning me-2"></i> 即時熱點分析 (草屯/南投區域)</h5>
+                                <div class="alert alert-info bg-dark border-info text-info">
+                                    <i class="fas fa-info-circle"></i> AI 預測：週末晚間需求將於 18:00 達到高峰，建議增派 20 名 L1 人力至市區。
+                                </div>
+                                <div style="height: 250px; background: rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                    <span class="text-muted">[圖表元件：過去24小時訂單趨勢]</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card h-100">
+                                <h5><i class="fas fa-history text-secondary me-2"></i> 最新系統日誌</h5>
+                                <ul class="list-group list-group-flush bg-transparent">
+                                    <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                                        <small class="text-muted">12:30</small> 房號 802 <span class="badge bg-danger">跌倒偵測</span> 已派遣 L3 人員
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                                        <small class="text-muted">12:28</small> 訂單 #9923 <span class="badge bg-success">完成</span> 評分 5 星
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                                        <small class="text-muted">12:25</small> 照服員 陳小美 <span class="badge bg-primary">上線</span> (草屯區)
+                                    </li>
+                                    <li class="list-group-item bg-transparent text-light border-secondary px-0">
+                                        <small class="text-muted">12:20</small> 機器人 R-05 完成 3F 送餐
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. CaaS 區域調度 (Uber Style) View -->
+                <div id="view-dispatch" class="view-section d-none">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h2><i class="fas fa-map-marked-alt text-info me-2"></i>CaaS 區域調度中心</h2>
+                            <p class="text-muted mb-0">全域視野：草屯鎮、南投市、芬園鄉 (跨區連線)</p>
+                        </div>
+                        <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                            <div class="btn-group">
+                                <button class="btn btn-outline-light active" onclick="updateMapFilter('all')">全區總覽</button>
+                                <button class="btn btn-outline-warning" onclick="updateMapFilter('pending')">待媒合 (5)</button>
+                                <button class="btn btn-outline-success" onclick="updateMapFilter('active')">進行中 (42)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row h-100">
+                        <!-- 左側：地圖 (模擬) -->
+                        <div class="col-lg-8 mb-3">
+                            <div class="uber-map-container" id="dispatchMap">
+                                <div class="map-bg"></div>
+                                
+                                <!-- 浮動控制面板 (Uber Style) -->
+                                <div class="map-controls shadow-lg">
+                                    <h6 class="text-white mb-2"><i class="fas fa-crosshairs me-2"></i>調度視角</h6>
+                                    <select class="form-select form-select-sm bg-dark text-white border-secondary mb-2" id="view-center-select" onchange="updateViewCenter()">
+                                        <option value="hub">養生村總站 (Hub)</option>
+                                        <option value="caregiver1">L2 陳照服員 (移動中)</option>
+                                        <option value="caregiver2">L3 莊園專車 (市區)</option>
+                                    </select>
+                                    
+                                    <h6 class="text-white mb-2 mt-3"><i class="fas fa-wifi me-2"></i>搜尋半徑</h6>
+                                    <div class="btn-group w-100 btn-group-sm" role="group">
+                                        <input type="radio" class="btn-check" name="radius" id="rad1" autocomplete="off">
+                                        <label class="btn btn-outline-secondary" for="rad1" onclick="setRadius(1)">1km</label>
+                                        <input type="radio" class="btn-check" name="radius" id="rad3" autocomplete="off" checked>
+                                        <label class="btn btn-outline-secondary" for="rad3" onclick="setRadius(3)">3km</label>
+                                        <input type="radio" class="btn-check" name="radius" id="rad5" autocomplete="off">
+                                        <label class="btn btn-outline-secondary" for="rad5" onclick="setRadius(5)">5km</label>
+                                    </div>
+                                </div>
+
+                                <!-- 養生村 Hub (固定) -->
+                                <div class="map-marker" id="marker-hub" style="top: 50%; left: 50%; color: var(--cb-accent); transition: top 0.5s, left 0.5s;" onclick="showDetails('hub')">
+                                    <i class="fas fa-star pin fa-2x"></i>
+                                    <div class="text-white fw-bold bg-dark px-2 rounded mt-1 small text-nowrap">養生村總站</div>
+                                </div>
+                                
+                                <!-- 模擬照服員 (動態位置) -->
+                                <div class="map-marker" id="marker-cg1" style="top: 30%; left: 40%; color: var(--cb-green);" data-bs-toggle="tooltip" title="L2 陳照服員 (移動中)">
+                                    <i class="fas fa-motorcycle pin"></i>
+                                </div>
+                                <div class="map-marker" id="marker-cg2" style="top: 60%; left: 65%; color: #ffd700;" data-bs-toggle="tooltip" title="L3 莊園專車">
+                                    <i class="fas fa-car-side pin"></i>
+                                </div>
+                                <div class="map-marker" id="marker-cg3" style="top: 20%; left: 70%; color: white;" data-bs-toggle="tooltip" title="L1 服務中">
+                                    <i class="fas fa-user pin"></i>
+                                </div>
+                                <div class="map-marker" id="marker-cg4" style="top: 75%; left: 20%; color: white;" data-bs-toggle="tooltip" title="L1 閒置中">
+                                    <i class="fas fa-user pin"></i>
+                                </div>
+
+                                <!-- 模擬需求點 (分散全區) -->
+                                <div class="map-marker" style="top: 35%; left: 25%; color: var(--alert-red);" onclick="showOrderDetails('ord-001')">
+                                    <div class="pulse" style="color: var(--alert-red);"></div>
+                                    <i class="fas fa-map-marker-alt pin"></i>
+                                </div>
+                                <div class="map-marker" style="top: 80%; left: 30%; color: var(--alert-red);" onclick="showOrderDetails('ord-002')">
+                                    <i class="fas fa-map-marker-alt pin"></i>
+                                </div>
+                                <div class="map-marker" style="top: 15%; left: 85%; color: var(--alert-red);" onclick="showOrderDetails('ord-003')">
+                                    <i class="fas fa-map-marker-alt pin"></i>
+                                </div>
+                                
+                                <!-- 搜尋雷達波 (動態放置) -->
+                                <div id="radar-circle" class="radar-scan" style="width: 200px; height: 200px; top: 50%; left: 50%;"></div>
+
+                                <div class="position-absolute bottom-0 end-0 p-2 text-end pointer-events-none">
+                                    <span class="badge bg-dark text-white opacity-75">Map Data ©2025 CareBridge</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右側：訂單與細節 -->
+                        <div class="col-lg-4 d-flex flex-column" style="height: 600px;">
+                            <!-- 搜尋欄 -->
+                            <div class="input-group mb-3">
+                                <span class="input-group-text bg-dark border-secondary text-light"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control bg-dark border-secondary text-light" placeholder="搜尋訂單或人員...">
+                            </div>
+
+                            <!-- 訂單列表 -->
+                            <div class="order-list-container flex-grow-1 overflow-auto pe-2">
+                                <h6 class="text-muted text-uppercase small ls-1 d-flex justify-content-between">
+                                    <span>附近需求 (Radius)</span>
+                                    <span class="badge bg-secondary rounded-pill">3</span>
+                                </h6>
+                                
+                                <div class="order-list-item active" onclick="showOrderDetails('ord-001')">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user-injured text-danger"></i> 李先生 (居家)</strong>
+                                        <span class="badge bg-warning text-dark">急件</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="fas fa-location-arrow text-info"></i> 距離目前中心 1.2 km<br>
+                                        <i class="far fa-clock"></i> 需求：3小時 | 陪同就醫
+                                    </div>
+                                </div>
+
+                                <div class="order-list-item" onclick="showOrderDetails('ord-002')">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-home text-info"></i> 王奶奶 (喘息)</strong>
+                                        <span class="badge bg-secondary">芬園鄉</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="fas fa-location-arrow text-info"></i> 距離目前中心 4.5 km<br>
+                                        <i class="far fa-clock"></i> 需求：6小時 | 備餐/家務
+                                    </div>
+                                </div>
+                                
+                                <div class="order-list-item" onclick="showOrderDetails('ord-003')">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-user text-light"></i> 林小姐 (臨托)</strong>
+                                        <span class="badge bg-secondary">南投市</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        <i class="fas fa-location-arrow text-info"></i> 距離目前中心 8.0 km<br>
+                                        <i class="far fa-clock"></i> 需求：2小時 | 幼兒陪玩
+                                    </div>
+                                </div>
+
+                                <h6 class="text-muted text-uppercase small ls-1 mt-3">進行中任務 (Active)</h6>
+                                <div class="order-list-item" style="border-left-color: var(--cb-green);">
+                                    <div class="d-flex justify-content-between">
+                                        <strong>陳照服員 (L2)</strong>
+                                        <span class="text-success small">任務中</span>
+                                    </div>
+                                    <div class="small text-muted mt-1">
+                                        服務對象：張爺爺<br>
+                                        剩餘時間：45 分鐘
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 子子畫面：訂單詳情 (預設隱藏，點擊顯示) -->
+                            <div id="order-detail-panel" class="sub-view-panel">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <h5 class="text-white">訂單詳情 #ORD-001</h5>
+                                    <button class="btn btn-sm btn-close btn-close-white" onclick="hideOrderDetails()"></button>
+                                </div>
+                                <hr class="border-secondary my-2">
+                                <p class="mb-1"><span class="text-muted">客戶：</span> 李大明 (VIP)</p>
+                                <p class="mb-1"><span class="text-muted">位置：</span> 草屯鎮中正路 55 號</p>
+                                <p class="mb-1"><span class="text-muted">距離：</span> <span class="text-warning">1.2 km (範圍內)</span></p>
+                                <p class="mb-1"><span class="text-muted">需求：</span> 陪同就醫 (骨科回診)</p>
+                                <p class="mb-3"><span class="text-muted">支付：</span> NT$ 1,140 (已授權)</p>
+                                
+                                <h6 class="small text-muted">AI 推薦最佳人選 (半徑優先)：</h6>
+                                <div class="d-flex align-items-center mb-3 bg-dark p-2 rounded border border-success">
+                                    <div class="position-relative">
+                                        <i class="fas fa-motorcycle fa-2x text-success me-2"></i>
+                                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                                    </div>
+                                    <div class="ms-2">
+                                        <div class="fw-bold">陳小美 <span class="badge badge-l2">L2</span></div>
+                                        <small class="text-muted">距離案主 0.5 km (3分鐘)</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-success ms-auto">立即派單</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 養生村房控 View -->
+                <div id="view-village" class="view-section d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2><i class="fas fa-hotel text-warning me-2"></i>養生莊園房控中心 (123房)</h2>
+                        <div>
+                            <span class="me-3"><i class="fas fa-square text-success"></i> 入住中</span>
+                            <span class="me-3"><i class="fas fa-square text-secondary opacity-50"></i> 空房</span>
+                            <span class="me-3"><i class="fas fa-square text-danger"></i> 告警/求助</span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- 左側：123房網格 -->
+                        <div class="col-lg-8">
+                            <div class="content-card">
+                                <div id="room-grid" class="room-grid-container">
+                                    <!-- JS 將在此生成 123 個方格 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 右側：房間詳情子畫面 -->
+                        <div class="col-lg-4">
+                            <div class="content-card h-100" id="room-detail-view">
+                                <div class="text-center text-muted py-5">
+                                    <i class="fas fa-hand-pointer fa-3x mb-3"></i>
+                                    <p>請點擊左側房間查看即時狀態</p>
+                                </div>
+                            </div>
+                            <!-- 隱藏的詳情模板 -->
+                            <div id="room-detail-template" class="d-none">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h3 class="text-white">房號 <span id="r-num">802</span></h3>
+                                    <span class="badge bg-danger fs-6" id="r-status">跌倒告警</span>
+                                </div>
+                                <hr class="border-secondary">
+                                <div class="mb-3">
+                                    <label class="text-muted small">住戶姓名</label>
+                                    <div class="fs-5">張阿土 爺爺 (82歲)</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="text-muted small">入住類型</label>
+                                    <div><span class="badge badge-l3">長期尊榮會員</span></div>
+                                </div>
+                                
+                                <div class="card bg-dark border-secondary mb-3">
+                                    <div class="card-body p-2">
+                                        <h6 class="text-info"><i class="fas fa-wifi"></i> IoT 感測數據</h6>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span>心率</span> <span class="text-white">88 bpm</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span>房溫</span> <span class="text-white">24.5°C</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between small">
+                                            <span>床位壓力</span> <span class="text-danger fw-bold">離床 (跌倒?)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-danger"><i class="fas fa-exclamation-circle"></i> 確認緊急處置</button>
+                                    <button class="btn btn-outline-light"><i class="fas fa-video"></i> 開啟房內監控</button>
+                                    <button class="btn btn-outline-light"><i class="fas fa-history"></i> 查看健康紀錄</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 影音展示專區 View (全新升級版) -->
+                <div id="view-videos" class="view-section d-none">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0"><i class="fab fa-youtube text-danger me-2"></i>CareBridge 影音展示專區</h2>
+                        <span class="badge bg-secondary">Total: 5 支影片</span>
+                    </div>
+                    
+                    <!-- 主打影片：平台 Demo -->
+                    <div class="row mb-5">
+                        <div class="col-12">
+                            <div class="video-card">
+                                <div class="video-container" style="padding-bottom: 45%;"> <!-- 稍微寬一點的比例 -->
+                                    <div class="video-placeholder" 
+                                         style="background-image: url('https://img.youtube.com/vi/sfpHBVzWsJY/maxresdefault.jpg');"
+                                         onclick="loadVideo(this, 'sfpHBVzWsJY')">
+                                        <div class="play-btn"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info bg-dark">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div class="video-tags">
+                                            <span class="video-tag tag-demo">Demo</span>
+                                            <span class="video-tag tag-concept">核心功能</span>
+                                        </div>
+                                        <small class="text-muted"><i class="far fa-clock"></i> 2:35</small>
+                                    </div>
+                                    <h4>CaaS App 使用流程示範 (3小時彈性預約)</h4>
+                                    <p class="video-desc">
+                                        完整展示 CareBridge App 的核心價值：如何解決「找不到短期看護」的痛點。
+                                        從使用者端的「3小時彈性預約」、AI 智能媒合過程，到照服員端的 GPS 打卡與接單流程。
+                                        體現「隨選隨用」的科技便利性。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4 class="mb-4 text-white"><i class="fas fa-film me-2"></i>情境劇系列 (Scenario 1-4)</h4>
+                    
+                    <!-- 情境劇網格 -->
+                    <div class="row g-4">
+                        <!-- Video 2: 情境一 -->
+                        <div class="col-lg-6">
+                            <div class="video-card">
+                                <div class="video-container">
+                                    <div class="video-placeholder" 
+                                         style="background-image: url('https://img.youtube.com/vi/7n-Ub8OZqLU/hqdefault.jpg');"
+                                         onclick="loadVideo(this, '7n-Ub8OZqLU')">
+                                        <div class="play-btn"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-tags">
+                                        <span class="video-tag tag-scenario">情境一</span>
+                                        <span class="video-tag tag-concept">短期喘息</span>
+                                    </div>
+                                    <h5>解決無法請全職看護的痛點</h5>
+                                    <p class="video-desc">
+                                        <strong>對象：</strong> 上班族小明。<br>
+                                        <strong>痛點：</strong> 白天需上班，不放心失智父親獨自在家，但無法負擔外籍看護。<br>
+                                        <strong>解法：</strong> 使用 CaaS 預約平日 9-17 點陪伴，兼顧工作與親情。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video 3: 情境二 -->
+                        <div class="col-lg-6">
+                            <div class="video-card">
+                                <div class="video-container">
+                                    <div class="video-placeholder" 
+                                         style="background-image: url('https://img.youtube.com/vi/T2p4MjT9CSk/hqdefault.jpg');"
+                                         onclick="loadVideo(this, 'T2p4MjT9CSk')">
+                                        <div class="play-btn"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-tags">
+                                        <span class="video-tag tag-scenario">情境二</span>
+                                        <span class="video-tag tag-concept">術後復原</span>
+                                    </div>
+                                    <h5>王阿嬤的術後復原支持</h5>
+                                    <p class="video-desc">
+                                        <strong>對象：</strong> 剛做完膝關節手術的王阿嬤。<br>
+                                        <strong>痛點：</strong> 出院黃金兩週需密集照顧，但之後只需輕度協助。<br>
+                                        <strong>解法：</strong> 透過平台預約「第1-2週密集」、「第3-4週遞減」的動態照護方案。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video 4: 情境三 -->
+                        <div class="col-lg-6">
+                            <div class="video-card">
+                                <div class="video-container">
+                                    <div class="video-placeholder" 
+                                         style="background-image: url('https://img.youtube.com/vi/bENfJanU8Mc/hqdefault.jpg');"
+                                         onclick="loadVideo(this, 'bENfJanU8Mc')">
+                                        <div class="play-btn"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-tags">
+                                        <span class="video-tag tag-scenario">情境三</span>
+                                        <span class="video-tag tag-concept">家庭支援</span>
+                                    </div>
+                                    <h5>單親媽媽的緊急支援 (臨托)</h5>
+                                    <p class="video-desc">
+                                        <strong>對象：</strong> 單親媽媽陳小姐。<br>
+                                        <strong>痛點：</strong> 保母臨時請假，隔天有重要會議。<br>
+                                        <strong>解法：</strong> 擴展服務至「幼兒臨托」，利用平台的信任機制與即時媒合解決燃眉之急。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Video 5: 情境四 -->
+                        <div class="col-lg-6">
+                            <div class="video-card">
+                                <div class="video-container">
+                                    <div class="video-placeholder" 
+                                         style="background-image: url('https://img.youtube.com/vi/ZkrbiThMpyQ/hqdefault.jpg');"
+                                         onclick="loadVideo(this, 'ZkrbiThMpyQ')">
+                                        <div class="play-btn"></div>
+                                    </div>
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-tags">
+                                        <span class="video-tag tag-scenario">情境四</span>
+                                        <span class="video-tag tag-concept">養生村互動</span>
+                                    </div>
+                                    <h5>養生村照護員角色互動</h5>
+                                    <p class="video-desc">
+                                        <strong>對象：</strong> 養生村住戶李教授。<br>
+                                        <strong>場景：</strong> O2O 整合生活。<br>
+                                        <strong>解法：</strong> 展示住戶如何享受實體設施，同時透過 App 呼叫額外的「一對一 CaaS 復健」與「遠距醫療」服務。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. 遠距醫療 & 6. 機器人 (Placeholder Views for demo completeness) -->
+                <div id="view-telemed" class="view-section d-none">
+                    <h2><i class="fas fa-user-md text-primary me-2"></i>Tier 1 遠距醫療中心</h2>
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <div class="content-card text-center py-5" style="border: 2px dashed #444;">
+                                <i class="fas fa-video fa-4x text-muted mb-3"></i>
+                                <h4>等待醫師連線...</h4>
+                                <p class="text-muted">目前線上醫師：張志明 醫師 (家醫科)</p>
+                                <button class="btn btn-primary mt-2">發起測試通話</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card">
+                                <h5>今日預約 (3)</h5>
+                                <ul class="list-group list-group-flush bg-transparent">
+                                    <li class="list-group-item bg-transparent text-light">14:00 - 房 301 (定期回診)</li>
+                                    <li class="list-group-item bg-transparent text-light">15:30 - 李先生 (居家CaaS)</li>
+                                    <li class="list-group-item bg-transparent text-light">16:00 - 房 505 (用藥諮詢)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="view-robot" class="view-section d-none">
+                    <h2><i class="fas fa-robot text-info me-2"></i>人機協作監控 (Beta)</h2>
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-4">
+                            <div class="content-card text-center">
+                                <i class="fas fa-robot fa-3x text-success mb-3"></i>
+                                <h5>R-01 (送餐型)</h5>
+                                <p class="text-success">任務中：前往 8F</p>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-success" style="width: 75%"></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block">電量 75%</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card text-center">
+                                <i class="fas fa-robot fa-3x text-primary mb-3"></i>
+                                <h5>R-02 (消毒型)</h5>
+                                <p class="text-primary">任務中：大廳消毒</p>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-primary" style="width: 40%"></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block">電量 40%</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="content-card text-center" style="opacity: 0.6;">
+                                <i class="fas fa-robot fa-3x text-secondary mb-3"></i>
+                                <h5>R-03 (陪伴型)</h5>
+                                <p class="text-muted">待命中：充電站</p>
+                                <div class="progress" style="height: 5px;">
+                                    <div class="progress-bar bg-secondary" style="width: 100%"></div>
+                                </div>
+                                <small class="text-muted mt-2 d-block">電量 100%</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // --- 視圖切換邏輯 ---
+        function switchView(viewId, navElement) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('d-none'));
+            document.getElementById(viewId).classList.remove('d-none');
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            navElement.classList.add('active');
+            
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+
+        // --- 手機版側邊欄開關 ---
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+            document.getElementById('mobileOverlay').classList.toggle('show');
+        }
+
+        // --- 訂單詳情子畫面控制 ---
+        function showOrderDetails(orderId) {
+            document.querySelectorAll('.order-list-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const panel = document.getElementById('order-detail-panel');
+            panel.style.display = 'block';
+            panel.style.opacity = 0;
+            setTimeout(() => { panel.style.opacity = 1; panel.style.transition = 'opacity 0.3s'; }, 10);
+            console.log("Loading details for: " + orderId);
+        }
+
+        function hideOrderDetails() {
+            document.getElementById('order-detail-panel').style.display = 'none';
+        }
+
+        // --- 影片載入邏輯 (修復版：Click-to-Play + Mute) ---
+        function loadVideo(el, videoId) {
+            // 關鍵修正：加入 mute=1, playsinline=1 確保自動播放不被瀏覽器阻擋
+            // modestbranding=1 減少 YouTube Logo 顯示
+            const iframe = document.createElement("iframe");
+            iframe.setAttribute("src", `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1`);
+            iframe.setAttribute("title", "YouTube video player");
+            iframe.setAttribute("frameborder", "0");
+            
+            // 允許自動播放權限
+            iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+            iframe.setAttribute("allowfullscreen", "");
+            
+            const container = el.parentElement;
+            // 清空容器 (移除封面圖)
+            container.innerHTML = "";
+            // 插入 iframe，因為有 mute=1，理論上會直接播放
+            container.appendChild(iframe);
+        }
+
+        // --- CaaS 地圖調度邏輯 (新) ---
+        function updateViewCenter() {
+            const select = document.getElementById('view-center-select');
+            const radar = document.getElementById('radar-circle');
+            const hubMarker = document.getElementById('marker-hub');
+            const cg1Marker = document.getElementById('marker-cg1');
+            const cg2Marker = document.getElementById('marker-cg2');
+            
+            // 模擬視角移動與雷達重新定位
+            if (select.value === 'hub') {
+                // 回到中心 (50%, 50%)
+                radar.style.top = '50%';
+                radar.style.left = '50%';
+                // 模擬地圖平移效果 (移動其他標記)
+                cg1Marker.style.top = '30%'; cg1Marker.style.left = '40%';
+                cg2Marker.style.top = '60%'; cg2Marker.style.left = '65%';
+            } else if (select.value === 'caregiver1') {
+                // 以 Caregiver 1 為中心 (移動雷達至 CG1 位置)
+                radar.style.top = '30%';
+                radar.style.left = '40%';
+            } else if (select.value === 'caregiver2') {
+                 // 以 Caregiver 2 為中心
+                radar.style.top = '60%';
+                radar.style.left = '65%';
+            }
+        }
+
+        function setRadius(km) {
+            const radar = document.getElementById('radar-circle');
+            let size = 200; // default 3km
+            if (km === 1) size = 100;
+            if (km === 5) size = 350;
+            
+            radar.style.width = size + 'px';
+            radar.style.height = size + 'px';
+        }
+        
+        function updateMapFilter(type) {
+            // 簡單模擬過濾器按鈕狀態
+            console.log("Filter updated: " + type);
+        }
+
+        // --- 養生村 123 房網格生成 ---
+        function initRoomGrid() {
+            const gridContainer = document.getElementById('room-grid');
+            gridContainer.innerHTML = ''; 
+
+            for (let i = 1; i <= 123; i++) {
+                const roomDiv = document.createElement('div');
+                roomDiv.className = 'room-cell';
+                
+                let statusClass = 'occupied';
+                let icon = '<i class="fas fa-user"></i>';
+                
+                const rand = Math.random();
+                if (rand > 0.8) { 
+                    statusClass = 'vacant'; 
+                    icon = '<i class="far fa-circle"></i>';
+                } else if (rand < 0.05) { 
+                    statusClass = 'emergency';
+                    icon = '<i class="fas fa-exclamation-triangle"></i>';
+                }
+
+                if (i === 114) { 
+                    statusClass = 'emergency';
+                    icon = '<i class="fas fa-exclamation-triangle"></i>';
+                }
+
+                roomDiv.classList.add(statusClass);
+                
+                const floor = Math.floor((i-1)/12) + 1;
+                const roomNum = floor * 100 + ((i-1)%12 + 1);
+                
+                roomDiv.innerHTML = `<div>${roomNum}</div><div class="mt-1">${icon}</div>`;
+                
+                roomDiv.onclick = function() {
+                    showRoomDetail(roomNum, statusClass);
+                };
+
+                gridContainer.appendChild(roomDiv);
+            }
+        }
+
+        // --- 顯示房間詳情 (子畫面) ---
+        function showRoomDetail(roomNum, status) {
+            const view = document.getElementById('room-detail-view');
+            const template = document.getElementById('room-detail-template').cloneNode(true);
+            
+            template.querySelector('#r-num').innerText = roomNum;
+            const statusBadge = template.querySelector('#r-status');
+            
+            if (status.includes('emergency')) {
+                statusBadge.className = 'badge bg-danger fs-6';
+                statusBadge.innerText = '跌倒/緊急告警';
+            } else if (status.includes('vacant')) {
+                statusBadge.className = 'badge bg-secondary fs-6';
+                statusBadge.innerText = '空房 (清潔中)';
+                template.querySelector('.card').style.display = 'none';
+            } else {
+                statusBadge.className = 'badge bg-success fs-6';
+                statusBadge.innerText = '入住中 (正常)';
+            }
+            
+            template.classList.remove('d-none');
+            view.innerHTML = ''; 
+            view.appendChild(template);
+        }
+
+        // 初始化
+        window.onload = function() {
+            initRoomGrid();
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            })
+        };
+    </script>
+</body>
+</html>
